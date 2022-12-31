@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<script src="https://cdn.jsdelivr.net/npm/brython@3/brython.min.js">
+		</script>
+		<script src="https://cdn.jsdelivr.net/npm/brython@3/brython_stdlib.js">
+		</script>
+	</head>
+	
+	<body id="body" onload="brython()">
+	</body>
+	<script type="text/python">
+			from browser import document, html, timer, aio
+			import random
+			from datetime import datetime, timedelta
+			
+			square_list = []
+			factor = 5
+			base_color=(0, 0, 255)
+			max = 50
+			rows = 11
+			cols = 16
+			num_sqs = rows * cols
+			
+			def pop_colors(e):
+				#determine colors
+				base_r = base_color[0]
+				base_g = base_color[1]
+				base_b = base_color[2]
+				r1 = base_r 
+				b1 = base_b 
+				g1 = base_g 
+				r2 = get_color(base_r) # round(random.randrange(0, get_color()))
+				b2 = get_color(base_b) # 255 - round(random.randrange(0, get_color()))
+				g2 = get_color(base_g) #round(random.randrange(0, get_color()))
+				e.style.backgroundImage = f'linear-gradient(to left, rgb({r2}, {g2}, {b2}), rgb({r2}, {g2}, {b2}), white, rgb({r1}, {g1}, {b1}), rgb({r1}, {g1}, {b1}))'
+				return e
+			
+			def get_random_square():
+				
+				td_list = document.select('td')
+				r = random.randint(0, num_sqs-1)
+				e = td_list[r]
+				#e = ev.target
+				return e
+				
+			def get_color(n):
+				f = random.randrange(2, 9)
+				print(f)
+				print(n)
+				print(base_color)
+				if n == 0:
+					c = n + (random.randrange(1, f) * f)
+				elif n == 255:
+					c = n - ((random.randrange(1, f) * f)*3)
+				else:
+					c = n + (random.randint(-1, 1) * f)
+				return round(c)
+			
+			def get_rgb(e):
+				s = str(e.style.backgroundImage)
+				
+				#get existing color values from attribute
+				x1 =s.find('rgb')
+				x2 =s.find('rgb', x1+1)
+				x3 = s.find('rgb', x2+1)
+				x4 = s.find('rgb', x3+1)
+				x5 = s.find(')', x4)
+				rgb1 = s[x1+4: x2-3].split(', ')
+				rgb2 = s[x2+4: x3-10].split(', ')
+				rgb3 = s[x3+4: x4-3].split(', ')
+				rgb4 = s[x4+4: x5-1].split(', ')
+				
+				r1 = rgb3[0]
+				g1 = rgb3[1]
+				b1 = rgb3[2]
+				
+				r2 = rgb1[0]
+				g2 = rgb1[1]
+				b2 = rgb1[2]
+				return r1, g1, b1, r2, g2, b2
+			
+			async def update_square(ev, i):
+				await aio.sleep(i)
+								
+				#find random square
+				e = get_random_square()
+				
+				#get attribute
+				r1, g1, b1, r2, g2, b2 =  get_rgb(e)
+				
+				#wait random period of time
+				await aio.sleep(random.randint(1, 10))
+				
+				#switch color
+				#print(type(e))
+				e.style.backgroundPosition="right"
+				
+				#wait before transitioning back
+				r = random.randint(1, 10)
+				await aio.sleep(r)
+				
+				#print(base_color)
+				base_r = base_color[0]
+				base_g = base_color[1]
+				base_b = base_color[2]
+				
+				#change original color to different color				
+				#get new colors
+				n1 = get_color(base_r)
+				n2 = get_color(base_g)
+				n3 = get_color(base_b)
+				
+				rgb1 = f"{n1}, {n2}, {n3}"
+				rgb2 = f"{r2}, {g2}, {b2}"
+				
+				#make change to backgroung image
+				e.style.backgroundImage = f'linear-gradient(to left, rgb({rgb2}), rgb({rgb2}), white, rgb({rgb1}), rgb({rgb1})'
+
+				#switch back
+				e.style.backgroundPosition="left"
+
+			def start_updates(ev):
+				print("update")
+				for i in range(0, max):
+					aio.run(update_square(ev, i))
+			
+			async def change_color(ev):
+				global base_color
+				e = ev.target
+				print(e.id)
+				if e.id == 'cell0015':
+					base_color = (255, 0, 0)
+					print("color changed")
+				if e.id == 'cell0115':
+					base_color = (0, 255, 0)
+					print("color changed")
+				if e.id == 'cell0215':
+					base_color = (0, 0, 255)
+					print("color changed")
+				if e.id == 'cell0315':
+					base_color = (255, 0, 255)
+					print("color changed")
+				if e.id == 'cell0415':
+					base_color = (0, 255, 255)
+					print("color changed")
+				if e.id == 'cell0515':
+					base_color = (255, 255, 0)
+					print("color changed")
+				for n, square in enumerate(square_list):	
+					#add style (and animation transitions)
+					e = document[f'{square}']
+					await aio.sleep(1/1000)
+					pop_colors(e)
+				
+			def start_change(ev):
+				print("change color")
+				aio.run(change_color(ev))
+					
+			def main():
+				base_r = base_color[0]
+				base_g = base_color[1]
+				base_b = base_color[2]
+				
+				#get body
+				b = document["body"]
+				
+				#add table to body
+				b <= html.TABLE(id='table')
+				
+				#get table
+				t = document['table']
+				
+				#add style to table
+				s = t.style
+				s.width="100%"
+				s.height="100%"
+				
+				#add rows
+				for x in range(0, rows):
+					r_temp = f"row{str(x).zfill(2)}"						#row name
+					t <= html.TR(id=r_temp)									#add row to table
+					r = document[r_temp]									#get row
+					r.style.height="93px"									#set row height
+					#add cells to row
+					for y in range(0, cols):
+						cell_temp = f"{str(x).zfill(2)}{str(y).zfill(2)}"	#cell name
+						r <= html.TD(id=f'cell{cell_temp}', Class=f'cell')	#add cell to row
+						square_list.append(f"cell{cell_temp}")				#add cell name to list
+				
+				for n, square in enumerate(square_list):	
+					#add style (and animation transitions)
+					e = document[f'{square}']
+					s = e.style
+					s.width=f"{round(100/16)}%"
+					s.color = "transparent"	
+					s.backgroundSize = "1000%"
+					s.backgroundPosition = "left"
+					r = random.randrange(2, 5)
+					s.transition = f"background-position {r}s"
+
+					#add event listener as trigger
+					if n % cols  == 0:
+						e.bind('mouseenter', start_updates)
+					if (n+1) % cols == 0:		#if the last square in row
+						e.bind('mouseenter', start_change) 
+					e = pop_colors(e)
+			
+			main()
+				
+		</script>
+		<style>
+		body{
+			background-color: black;
+		}
+		.cell{
+			height: 10px;
+			border-style: solid;
+			border-width: 10px;
+			border-color: black;
+			border-radius: 20px;
+			
+		}
+		#table{
+			border-collapse: collapse;
+			border-style: solid;
+			border-width: 3px;
+			height: 100%;
+			margin:0;
+			
+		}
+	</style>
+	</body>
+
+</html>
